@@ -224,9 +224,22 @@ body {
 
 .ide-3col {
   display: grid;
-  grid-template-columns: 270px 1fr 350px;
+  grid-template-columns: 260px minmax(0, 1fr);
   gap: 14px;
   align-items: start;
+}
+
+.ide-threads-col {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 1380px) {
+  .ide-3col {
+    grid-template-columns: 250px minmax(480px, 1fr) 330px;
+  }
+  .ide-threads-col {
+    grid-column: auto;
+  }
 }
 
 /* Left Explorer Column */
@@ -464,10 +477,10 @@ body {
 }
 
 .threads-scroll {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 10px;
-  max-height: 600px;
+  max-height: 500px;
   overflow-y: auto;
 }
 
