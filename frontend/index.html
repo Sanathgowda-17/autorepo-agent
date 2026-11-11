@@ -3,255 +3,231 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AutoRepo — Autonomous Multi-Agent PR Reviewer &amp; AST Security Linter</title>
+  <title>AutoRepo IDE — GitHub PR #142 Automated AST &amp; SAST Review Workbench</title>
   <link rel="stylesheet" href="/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="shell">
-    <!-- Left Sidebar -->
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-icon">🤖</div>
-        <div>
-          <div class="brand-title">AUTOREPO <span class="v-tag">DAG v1.0</span></div>
-          <div class="brand-sub">AST &amp; Multi-Agent PR Auditor</div>
-        </div>
+  <!-- Top GitHub-Style Repo Header -->
+  <header class="gh-header">
+    <div class="gh-header-top">
+      <div class="gh-repo-crumb">
+        <span class="gh-logo">🐙</span>
+        <span class="gh-owner">sanath-enterprise</span>
+        <span class="gh-slash">/</span>
+        <span class="gh-repo">core-banking-microservices</span>
+        <span class="gh-public-badge">Public</span>
       </div>
-
-      <div class="nav-label">AGENT WORKSPACES</div>
-      <nav class="nav-list">
-        <button class="nav-btn active" data-tab="tab-review">
-          <span>🔍</span>
-          <span>Multi-Agent PR Studio</span>
-        </button>
-        <button class="nav-btn" data-tab="tab-ast">
-          <span>🌳</span>
-          <span>AST &amp; Big-O Complexity</span>
-        </button>
-        <button class="nav-btn" data-tab="tab-tests">
-          <span>🧪</span>
-          <span>Pytest Synthesizer</span>
-          <span class="pill-green" id="navTestCount">6</span>
-        </button>
-        <button class="nav-btn" data-tab="tab-history">
-          <span>📜</span>
-          <span>PR Ledger &amp; Webhooks</span>
-        </button>
-      </nav>
-
-      <div class="sidebar-meta">
-        <div class="meta-row"><span>Parser</span><span class="ok">Python Native AST</span></div>
-        <div class="meta-row"><span>Security</span><span class="ok">OWASP Top-10 / CWE</span></div>
-        <div class="meta-row"><span>Webhook</span><span class="mono">HMAC-SHA256</span></div>
+      <div class="gh-actions">
+        <button id="simWebhookBtn" class="gh-btn gh-btn-outline">🔔 Trigger Signed Webhook (HMAC-SHA256)</button>
+        <button id="runDagBtn" class="gh-btn gh-btn-primary">▶ Re-Run 4-Agent CI Pipeline</button>
       </div>
-    </aside>
-
-    <!-- Main Content -->
-    <div class="main-area">
-      <header class="topbar">
-        <div>
-          <h1 id="pageHeading" class="page-heading">Autonomous 4-Agent PR Review &amp; Patch Studio</h1>
-          <span class="sub-badge">Deterministic AST Compiler Tree + CWE Static Analysis + Auto-Refactor</span>
-        </div>
-        <div class="topbar-right">
-          <div class="online-pill"><span class="dot"></span><span>PORT :8001 ACTIVE</span></div>
-        </div>
-      </header>
-
-      <!-- KPI Ribbon -->
-      <section class="kpi-grid">
-        <div class="kpi-box">
-          <div class="kpi-label">PR READINESS SCORE</div>
-          <div class="kpi-val" id="kpiScore">-- / 100</div>
-          <div class="kpi-foot" id="kpiVerdict">Awaiting review</div>
-        </div>
-        <div class="kpi-box">
-          <div class="kpi-label">CWE SECURITY FLAWS</div>
-          <div class="kpi-val red" id="kpiSecurityCount">0</div>
-          <div class="kpi-foot">SQLi, RCE, Hardcoded Secrets</div>
-        </div>
-        <div class="kpi-box">
-          <div class="kpi-label">WORST TIME COMPLEXITY</div>
-          <div class="kpi-val amber" id="kpiBigO">O(1)</div>
-          <div class="kpi-foot" id="kpiCyclomatic">Avg McCabe M = 1.0</div>
-        </div>
-        <div class="kpi-box">
-          <div class="kpi-label">SYNTHESIZED TESTS</div>
-          <div class="kpi-val cyan" id="kpiTestsCount">0</div>
-          <div class="kpi-foot">Auto-generated pytest stubs</div>
-        </div>
-        <div class="kpi-box">
-          <div class="kpi-label">DAG EXECUTION TIME</div>
-          <div class="kpi-val green" id="kpiLatency">0.0 ms</div>
-          <div class="kpi-foot">4-Agent pipeline runtime</div>
-        </div>
-      </section>
-
-      <!-- ===================================================================
-           TAB 1: MULTI-AGENT PR REVIEW STUDIO
-           =================================================================== -->
-      <section id="tab-review" class="tab-pane active">
-        <!-- 4-Agent DAG Pipeline Visualizer -->
-        <div class="panel dag-panel">
-          <div class="panel-head">
-            <div>
-              <div class="panel-title">🕸️ 4-Agent Directed Acyclic Graph (DAG) Execution Pipeline</div>
-              <div class="panel-sub">Real-time state and telemetry across specialized autonomous code review agents</div>
-            </div>
-          </div>
-          <div id="dagPipelineGrid" class="dag-grid"></div>
-        </div>
-
-        <div class="studio-split">
-          <!-- Left: PR Diff / Code Composer -->
-          <div class="panel">
-            <div class="panel-head">
-              <div>
-                <div class="panel-title">📥 Pull Request Code / Diff Inspector</div>
-                <div class="panel-sub">Load a preset enterprise PR scenario or paste any Python/JS/SQL code diff</div>
-              </div>
-            </div>
-
-            <div class="preset-bar" id="presetButtonsBar"></div>
-
-            <form id="reviewForm" class="form-stack">
-              <div class="row-2">
-                <input type="text" id="prTitleInput" class="input" value="feat(payments): add customer invoice lookup and batch ledger sync" required>
-                <input type="text" id="filePathInput" class="input" style="max-width: 220px;" value="services/payment_ledger.py" required>
-              </div>
-              <textarea id="codeInput" class="code-editor" rows="13" spellcheck="false" required></textarea>
-              <div class="form-actions">
-                <span class="mono-hint">Tip: Modify the code or load a preset above, then run the 4-Agent DAG</span>
-                <button type="submit" id="runDagBtn" class="btn btn-primary">⚡ Execute 4-Agent PR Audit</button>
-              </div>
-            </form>
-          </div>
-
-          <!-- Right: Security CWE & AST Findings -->
-          <div class="panel">
-            <div class="panel-head">
-              <div>
-                <div class="panel-title">🚨 Line-by-Line CWE Security &amp; AST Smells</div>
-                <div class="panel-sub">Deterministic findings with CWE identifiers and remediation guidance</div>
-              </div>
-            </div>
-            <div id="findingsContainer" class="findings-list"></div>
-          </div>
-        </div>
-
-        <!-- Side-by-Side Original vs. Auto-Refactored Patch -->
-        <div class="panel">
-          <div class="panel-head">
-            <div>
-              <div class="panel-title">🔧 Side-by-Side Diff: Vulnerable PR vs. AutoRepo Hardened Patch</div>
-              <div class="panel-sub">Agent 4 automatically rewrites SQL injections into parameterized queries, removes hardcoded secrets, and fixes AST bugs</div>
-            </div>
-          </div>
-          <div class="diff-grid">
-            <div>
-              <div class="diff-header red-head">❌ Original Submitted PR Code</div>
-              <pre id="originalCodePre" class="code-box red-border"></pre>
-            </div>
-            <div>
-              <div class="diff-header green-head">✅ AutoRepo Production-Hardened Patch</div>
-              <pre id="refactoredCodePre" class="code-box green-border"></pre>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ===================================================================
-           TAB 2: AST & CYCLOMATIC COMPLEXITY GRAPH
-           =================================================================== -->
-      <section id="tab-ast" class="tab-pane">
-        <div class="panel">
-          <div class="panel-head">
-            <div>
-              <div class="panel-title">🌳 Compiler Abstract Syntax Tree (AST) Function Breakdown</div>
-              <div class="panel-sub">Extracted via <code>ast.NodeVisitor</code> — McCabe Cyclomatic Complexity (<i>M</i> = 1 + branches) and Loop Nesting Depth</div>
-            </div>
-          </div>
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Function Symbol</th>
-                <th>Line Range</th>
-                <th>Arguments</th>
-                <th>McCabe Complexity (M)</th>
-                <th>Max Loop Depth</th>
-                <th>Est. Time Complexity</th>
-                <th>Type Hints</th>
-                <th>AST Nodes</th>
-                <th>Risk Tier</th>
-              </tr>
-            </thead>
-            <tbody id="astFunctionsBody"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- ===================================================================
-           TAB 3: PYTEST UNIT TEST SYNTHESIZER
-           =================================================================== -->
-      <section id="tab-tests" class="tab-pane">
-        <div class="studio-split">
-          <div class="panel">
-            <div class="panel-head">
-              <div>
-                <div class="panel-title">🧪 Auto-Synthesized <code>pytest</code> Suite (Node 3)</div>
-                <div class="panel-sub">Generated directly from AST function signatures and CWE regression rules</div>
-              </div>
-              <button id="runPytestBtn" class="btn btn-green">▶ Run Synthesized Tests in Sandbox</button>
-            </div>
-            <pre id="pytestCodePre" class="code-box"></pre>
-          </div>
-
-          <div class="panel">
-            <div class="panel-head">
-              <div>
-                <div class="panel-title">✅ Sandbox Test Execution Runner</div>
-                <div class="panel-sub">Live contract &amp; security regression assertion verification</div>
-              </div>
-            </div>
-            <div id="testResultsBox" class="findings-list"></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ===================================================================
-           TAB 4: PR AUDIT LEDGER & GITHUB WEBHOOKS
-           =================================================================== -->
-      <section id="tab-history" class="tab-pane">
-        <div class="panel">
-          <div class="panel-head">
-            <div>
-              <div class="panel-title">📜 Persistent SQLite PR Review Ledger (<code>pr_reviews</code>)</div>
-              <div class="panel-sub">Click any historical PR audit below to reload its full AST &amp; SAST report</div>
-            </div>
-            <button id="simWebhookBtn" class="btn btn-primary">🔔 Simulate Signed GitHub PR Webhook (HMAC-SHA256)</button>
-          </div>
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Review ID</th>
-                <th>PR Title</th>
-                <th>Target File</th>
-                <th>Score</th>
-                <th>Verdict</th>
-                <th>CWE Flaws</th>
-                <th>AST Smells</th>
-                <th>Worst Big-O</th>
-              </tr>
-            </thead>
-            <tbody id="historyTableBody"></tbody>
-          </table>
-        </div>
-      </section>
     </div>
-  </div>
+
+    <!-- Pull Request Title & Branch Metadata -->
+    <div class="gh-pr-banner">
+      <div class="gh-pr-title-row">
+        <h1 id="prTitleHeader" class="gh-pr-title">feat(payments): add customer invoice lookup and batch ledger sync</h1>
+        <span class="gh-pr-num" id="prNumberHeader">#142</span>
+      </div>
+      <div class="gh-pr-meta-row">
+        <span id="verdictPill" class="gh-status-pill blocked">⛔ BLOCKED_SECURITY_RISK</span>
+        <span class="gh-branch-meta">
+          <strong id="prAuthor">dev-checkout-team</strong> wants to merge 1 commit into
+          <code class="gh-branch">main</code> from <code class="gh-branch" id="prBranch">feat/payment-sync</code>
+        </span>
+        <div class="gh-score-chip">
+          <span>Readiness Score:</span>
+          <strong id="kpiScore">-- / 100</strong>
+          <span class="gh-dot">•</span>
+          <span>Worst Complexity: <strong id="kpiBigO">O(1)</strong></span>
+          <span class="gh-dot">•</span>
+          <span>Runtime: <strong id="kpiLatency">0 ms</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Horizontal GitHub PR Tabs -->
+    <nav class="gh-tabs">
+      <button class="gh-tab active" data-tab="tab-review">
+        <span>📝</span>
+        <span>Files Changed &amp; IDE Diff</span>
+        <span class="gh-counter" id="kpiSecurityCount">0</span>
+      </button>
+      <button class="gh-tab" data-tab="tab-ast">
+        <span>🌳</span>
+        <span>Compiler AST &amp; McCabe Graph</span>
+        <span class="gh-counter" id="kpiCyclomatic">M=1</span>
+      </button>
+      <button class="gh-tab" data-tab="tab-tests">
+        <span>🧪</span>
+        <span>CI Pytest Synthesizer</span>
+        <span class="gh-counter" id="navTestCount">0</span>
+      </button>
+      <button class="gh-tab" data-tab="tab-history">
+        <span>📜</span>
+        <span>Webhook &amp; PR Audit Log</span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- Main Workbench Container -->
+  <main class="ide-container">
+
+    <!-- =======================================================================
+         TAB 1: 3-PANE IDE WORKBENCH (FILE TREE + CODE DIFF + CI CHECKS)
+         ======================================================================= -->
+    <section id="tab-review" class="gh-pane active">
+      <div class="ide-3col">
+        <!-- Column 1: PR Scenario & File Explorer -->
+        <aside class="ide-explorer">
+          <div class="explorer-head">PR SCENARIO EXPLORER</div>
+          <div id="presetButtonsBar" class="explorer-list"></div>
+
+          <div class="explorer-head" style="margin-top:16px;">EDIT PR METADATA</div>
+          <form id="reviewForm" class="explorer-form">
+            <label class="field-lbl">PR Title</label>
+            <input type="text" id="prTitleInput" class="ide-input" value="feat(payments): add customer invoice lookup and batch ledger sync" required>
+            <label class="field-lbl">Target Module Path</label>
+            <input type="text" id="filePathInput" class="ide-input mono" value="services/payment_ledger.py" required>
+            <button type="submit" class="gh-btn gh-btn-primary" style="width:100%;margin-top:8px;">⚡ Audit Modified Code</button>
+          </form>
+
+          <div class="explorer-head" style="margin-top:16px;">4-AGENT CI CHECK RUNS</div>
+          <div id="dagPipelineGrid" class="ci-checks-list"></div>
+        </aside>
+
+        <!-- Column 2: Center Code Editor & Side-by-Side Diff Workbench -->
+        <div class="ide-editor-col">
+          <div class="editor-tabbar">
+            <div class="editor-file-tab">
+              <span>🐍</span>
+              <span id="activeFileTab" class="mono">services/payment_ledger.py</span>
+              <span class="editor-mod-dot">M</span>
+            </div>
+            <span class="editor-hint">Live Editable Buffer — modify Python code below and click "Audit Modified Code"</span>
+          </div>
+          <textarea id="codeInput" class="ide-code-textarea" rows="12" spellcheck="false"></textarea>
+
+          <!-- Side-by-Side GitHub Split Diff -->
+          <div class="split-diff-wrapper">
+            <div class="split-diff-bar">
+              <span>🔧 Automated Agentic Patch Refactoring (Side-by-Side Split View)</span>
+              <span class="mono-small">Node 4: Lead Critic &amp; Auto-Refactor Engine</span>
+            </div>
+            <div class="split-diff-grid">
+              <div class="diff-pane diff-old">
+                <div class="diff-pane-title">− Original Submitted PR Buffer</div>
+                <pre id="originalCodePre" class="diff-pre"></pre>
+              </div>
+              <div class="diff-pane diff-new">
+                <div class="diff-pane-title">+ AutoRepo Production-Hardened Patch</div>
+                <pre id="refactoredCodePre" class="diff-pre"></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 3: Inline PR Review Threads (SAST + AST Smells) -->
+        <aside class="ide-threads-col">
+          <div class="threads-header">
+            <span>💬 Inline Review Threads</span>
+            <span class="gh-counter" id="threadsTotalBadge">0</span>
+          </div>
+          <div id="findingsContainer" class="threads-scroll"></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         TAB 2: COMPILER AST & MCCABE COMPLEXITY GRAPH
+         ======================================================================= -->
+    <section id="tab-ast" class="gh-pane">
+      <div class="gh-card">
+        <div class="gh-card-head">
+          <div>
+            <h2>🌳 Python Native Compiler AST (<code>ast.NodeVisitor</code>) Function Telemetry</h2>
+            <p>Deterministic extraction of McCabe Cyclomatic Complexity (<i>M</i> = 1 + branches), Loop Nesting Depth, and Type Hint Coverage</p>
+          </div>
+        </div>
+        <table class="gh-table">
+          <thead>
+            <tr>
+              <th>Function Symbol</th>
+              <th>Lines</th>
+              <th>Parameters</th>
+              <th>McCabe Complexity (M)</th>
+              <th>Loop Nesting</th>
+              <th>Estimated Big-O</th>
+              <th>Type Annotations</th>
+              <th>AST Nodes</th>
+              <th>Risk Status</th>
+            </tr>
+          </thead>
+          <tbody id="astFunctionsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         TAB 3: PYTEST SYNTHESIZER & CI TEST TERMINAL
+         ======================================================================= -->
+    <section id="tab-tests" class="gh-pane">
+      <div class="pytest-workbench">
+        <div class="gh-card">
+          <div class="gh-card-head">
+            <div>
+              <h2>🧪 Auto-Synthesized <code>pytest</code> Verification Suite (<span id="kpiTestsCount">0</span> Assertions)</h2>
+              <p>Generated from AST function signatures and CWE security regression rules</p>
+            </div>
+            <button id="runPytestBtn" class="gh-btn gh-btn-primary">▶ Execute Pytest Runner</button>
+          </div>
+          <pre id="pytestCodePre" class="terminal-code"></pre>
+        </div>
+
+        <div class="gh-card">
+          <div class="gh-card-head">
+            <div>
+              <h2>🖥️ CI Sandbox Test Execution Console</h2>
+              <p>Per-test assertion verification and execution latency</p>
+            </div>
+          </div>
+          <div id="testResultsBox" class="threads-scroll"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================================
+         TAB 4: PR AUDIT LEDGER & WEBHOOK DISPATCHES
+         ======================================================================= -->
+    <section id="tab-history" class="gh-pane">
+      <div class="gh-card">
+        <div class="gh-card-head">
+          <div>
+            <h2>📜 Historical Pull Request Audit Ledger (SQLite <code>pr_reviews</code>)</h2>
+            <p>Click any historical PR review to load its code diff, AST breakdown, and SAST threads into the IDE workbench</p>
+          </div>
+        </div>
+        <table class="gh-table">
+          <thead>
+            <tr>
+              <th>Commit / ID</th>
+              <th>Pull Request Title</th>
+              <th>Target File</th>
+              <th>Readiness Score</th>
+              <th>Merge Gate Verdict</th>
+              <th>CWE Flaws</th>
+              <th>AST Smells</th>
+              <th>Worst Big-O</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
 
   <script src="/app.js"></script>
 </body>

@@ -1,5 +1,5 @@
 /**
- * app.js — AutoRepo Autonomous 4-Agent PR Reviewer & AST Analyzer UI Controller
+ * app.js — AutoRepo IDE & GitHub Pull Request 4-Agent Workbench Controller
  */
 
 let currentReport = null;
@@ -20,6 +20,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     await runReview();
   });
 
+  document.getElementById("runDagBtn").addEventListener("click", async () => {
+    await runReview();
+  });
+
   document.getElementById("runPytestBtn").addEventListener("click", async () => {
     await executePytestSuite();
   });
@@ -30,8 +34,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function initTabs() {
-  const buttons = document.querySelectorAll(".nav-btn");
-  const panes = document.querySelectorAll(".tab-pane");
+  const buttons = document.querySelectorAll(".gh-tab");
+  const panes = document.querySelectorAll(".gh-pane");
   buttons.forEach((btn) => {
     btn.addEventListener("click", () => {
       buttons.forEach((b) => b.classList.remove("active"));
@@ -53,7 +57,7 @@ async function loadPresets() {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "preset-btn";
-      b.textContent = p.label;
+      b.textContent = p.label || `PR #${p.pr_number}: ${p.file_path}`;
       b.addEventListener("click", async () => {
         selectPreset(p);
         await runReview();
@@ -69,17 +73,27 @@ function selectPreset(preset) {
   document.getElementById("prTitleInput").value = preset.pr_title;
   document.getElementById("filePathInput").value = preset.file_path;
   document.getElementById("codeInput").value = preset.code;
+  document.getElementById("prTitleHeader").textContent = preset.pr_title;
+  document.getElementById("prNumberHeader").textContent = `#${preset.pr_number || 142}`;
+  document.getElementById("prAuthor").textContent = preset.author || "dev-checkout-team";
+  document.getElementById("prBranch").textContent = (preset.branch || "feat/pr -> main").split(" ")[0];
+  document.getElementById("activeFileTab").textContent = preset.file_path;
 }
 
 async function runReview() {
   const btn = document.getElementById("runDagBtn");
-  btn.textContent = "⏳ Running 4-Agent DAG...";
+  btn.textContent = "⏳ Running 4-Agent CI...";
   btn.disabled = true;
 
   try {
+    const prTitle = document.getElementById("prTitleInput").value;
+    const filePath = document.getElementById("filePathInput").value;
+    document.getElementById("prTitleHeader").textContent = prTitle;
+    document.getElementById("activeFileTab").textContent = filePath;
+
     const payload = {
-      pr_title: document.getElementById("prTitleInput").value,
-      file_path: document.getElementById("filePathInput").value,
+      pr_title: prTitle,
+      file_path: filePath,
       code: document.getElementById("codeInput").value
     };
 
@@ -95,26 +109,34 @@ async function runReview() {
   } catch (err) {
     console.error("Review failed:", err);
   } finally {
-    btn.textContent = "⚡ Execute 4-Agent PR Audit";
+    btn.textContent = "▶ Re-Run 4-Agent CI Pipeline";
     btn.disabled = false;
   }
 }
 
 function renderReport(r) {
-  // 1. KPIs
-  const scoreEl = document.getElementById("kpiScore");
-  scoreEl.textContent = `${r.score} / 100`;
-  scoreEl.className = "kpi-val " + (r.score >= 80 ? "green" : r.score >= 55 ? "amber" : "red");
+  // 1. Header Verdict Pill & Score
+  const verdictPill = document.getElementById("verdictPill");
+  if (r.verdict === "APPROVED_FOR_MERGE") {
+    verdictPill.className = "gh-status-pill approved";
+    verdictPill.textContent = "✅ APPROVED_FOR_MERGE";
+  } else if (r.verdict === "CHANGES_REQUESTED") {
+    verdictPill.className = "gh-status-pill warn";
+    verdictPill.textContent = "⚠️ CHANGES_REQUESTED";
+  } else {
+    verdictPill.className = "gh-status-pill blocked";
+    verdictPill.textContent = "⛔ BLOCKED_SECURITY_RISK";
+  }
 
-  document.getElementById("kpiVerdict").textContent = r.verdict;
-  document.getElementById("kpiSecurityCount").textContent = r.security_findings.length;
+  document.getElementById("kpiScore").textContent = `${r.score} / 100`;
+  document.getElementById("kpiSecurityCount").textContent = r.security_findings.length + r.arch_findings.length;
   document.getElementById("kpiBigO").textContent = r.ast_report.worst_time_complexity;
-  document.getElementById("kpiCyclomatic").textContent = `Avg McCabe M = ${r.ast_report.avg_cyclomatic_complexity}`;
+  document.getElementById("kpiCyclomatic").textContent = `M=${r.ast_report.avg_cyclomatic_complexity}`;
   document.getElementById("kpiTestsCount").textContent = r.test_cases_meta.length;
   document.getElementById("navTestCount").textContent = r.test_cases_meta.length;
   document.getElementById("kpiLatency").textContent = `${r.total_latency_ms} ms`;
 
-  // 2. 4-Agent DAG Cards
+  // 2. 4-Agent CI Check Runs (Left Sidebar)
   const dagGrid = document.getElementById("dagPipelineGrid");
   dagGrid.innerHTML = r.dag_nodes.map((n, idx) => {
     let badgeClass = "badge-green";
@@ -137,7 +159,7 @@ function renderReport(r) {
     `;
   }).join("");
 
-  // 3. Findings List (Security + AST Smells)
+  // 3. Inline Review Threads (Right Column)
   const findingsBox = document.getElementById("findingsContainer");
   const cards = [];
 
@@ -146,10 +168,10 @@ function renderReport(r) {
       <div class="finding-card">
         <div class="finding-top">
           <span class="finding-title">🚨 [${escapeHtml(s.cwe)}] ${escapeHtml(s.title)}</span>
-          <span class="badge badge-red">Line ${s.line} • ${escapeHtml(s.severity)}</span>
+          <span class="badge badge-red">L${s.line} • ${escapeHtml(s.severity)}</span>
         </div>
         <div class="finding-desc">${escapeHtml(s.explanation)}</div>
-        <div class="finding-fix">Fix: ${escapeHtml(s.remediation)}</div>
+        <div class="finding-fix">+ ${escapeHtml(s.remediation)}</div>
       </div>
     `);
   });
@@ -159,30 +181,32 @@ function renderReport(r) {
       <div class="finding-card warn">
         <div class="finding-top">
           <span class="finding-title">⚠️ [${escapeHtml(a.category)}] ${escapeHtml(a.rule)}</span>
-          <span class="badge badge-amber">Line ${a.line} • ${escapeHtml(a.severity)}</span>
+          <span class="badge badge-amber">L${a.line} • ${escapeHtml(a.severity)}</span>
         </div>
         <div class="finding-desc">${escapeHtml(a.message)}</div>
-        <div class="finding-fix">Fix: ${escapeHtml(a.remediation)}</div>
+        <div class="finding-fix">+ ${escapeHtml(a.remediation)}</div>
       </div>
     `);
   });
+
+  document.getElementById("threadsTotalBadge").textContent = cards.length;
 
   if (cards.length === 0) {
     cards.push(`
       <div class="finding-card pass">
         <div class="finding-top">
-          <span class="finding-title">✅ Zero Security or AST Anti-Patterns Detected</span>
-          <span class="badge badge-green">CLEAN PR</span>
+          <span class="finding-title">✅ 0 Blocking Threads</span>
+          <span class="badge badge-green">LGTM</span>
         </div>
-        <div class="finding-desc">All functions satisfy McCabe complexity thresholds, type-safety contracts, and OWASP Top-10 security checks.</div>
+        <div class="finding-desc">All AST complexity checks, type annotations, and OWASP CWE rules passed cleanly.</div>
       </div>
     `);
   }
   findingsBox.innerHTML = cards.join("");
 
-  // 4. Side-by-Side Original vs. Refactored Patch
-  document.getElementById("originalCodePre").textContent = r.original_code;
-  document.getElementById("refactoredCodePre").textContent = r.refactored_code;
+  // 4. Numbered Side-by-Side Split Diff
+  document.getElementById("originalCodePre").textContent = numberLines(r.original_code, "-");
+  document.getElementById("refactoredCodePre").textContent = numberLines(r.refactored_code, "+");
 
   // 5. AST Function Table (Tab 2)
   const astBody = document.getElementById("astFunctionsBody");
@@ -213,6 +237,13 @@ function renderReport(r) {
   executePytestSuite();
 }
 
+function numberLines(code, prefixChar) {
+  return String(code || "")
+    .split("\n")
+    .map((ln, i) => `${String(i + 1).padStart(2, " ")} ${prefixChar} │ ${ln}`)
+    .join("\n");
+}
+
 async function executePytestSuite() {
   if (!currentReport) return;
   try {
@@ -226,10 +257,10 @@ async function executePytestSuite() {
     box.innerHTML = (data.results || []).map((t) => `
       <div class="finding-card pass">
         <div class="finding-top">
-          <span class="finding-title mono">✅ ${escapeHtml(t.test_name)}</span>
-          <span class="badge badge-green">${t.duration_ms} ms • ${escapeHtml(t.status)}</span>
+          <span class="finding-title mono">PASSED ${escapeHtml(t.test_name)}</span>
+          <span class="badge badge-green">${t.duration_ms} ms</span>
         </div>
-        <div class="finding-desc">Target: <code>${escapeHtml(t.target_function)}</code> • Category: ${escapeHtml(t.category)}</div>
+        <div class="finding-desc">Target: <code>${escapeHtml(t.target_function)}</code> • Suite: ${escapeHtml(t.category)}</div>
       </div>
     `).join("");
   } catch (err) {
